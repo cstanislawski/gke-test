@@ -1,4 +1,4 @@
-name: Single Node Control Plane
+name: Create single node control plane
 
 on:
   workflow_dispatch:
@@ -65,7 +65,24 @@ jobs:
         run: |
           sudo systemctl enable --now kubelet
           sudo kubeadm config images pull
-          sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+          # Capture the output of the kubeadm init command
+          sudo kubeadm init --pod-network-cidr=10.244.0.0/16 > kubeadm-init.log 2>&1
+
+          mkdir -p $HOME/.kube
+          sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+          sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+          # Remove 'kubeadm join' from kubeadm-init.log
+          JOIN_COMMAND=$(sed -n '/kubeadm join/p' kubeadm-init.log)
+          echo "JOIN_COMMAND=$JOIN_COMMAND" >> $GITHUB_ENV
+          sed -i '/kubeadm join/d' kubeadm-init.log
+
+          # Print the output of the kubeadm init command
+          cat kubeadm-init.log
+
+      - name: Install CNI plugin
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
 
       - name: Keep alive
         run: |
