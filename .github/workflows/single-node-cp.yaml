@@ -20,7 +20,7 @@ jobs:
           sudo apt-get install -y apt-transport-https ca-certificates curl gpg
           sudo mkdir -p -m 755 /etc/apt/keyrings
           curl -fsSL https://pkgs.k8s.io/core:/stable:/v$(echo $KUBECTL_VERSION | cut -d. -f1,2)/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring-$KUBECTL_VERSION.gpg
-          echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring-$KUBECTL_VERSION.gpg] https://pkgs.k8s.io/core:/stable:/v$(echo $KUBECTL_VERSION | cut -d. -f1,2)/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+          echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring-$KUBECTL_VERSION.gpg] https://pkgs.k8s.io/core:/stable:/v$(echo $KUBECTL_VERSION | cut -d. -f1,2)/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
       - name: Install kubeadm, kubelet
         run: |
