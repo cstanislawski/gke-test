@@ -1,0 +1,24 @@
+name: Single Node Control Plane
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-control-plane:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install kubeadm, kubelet and kubectl
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y kubelet kubeadm kubectl
+          sudo apt-mark hold kubelet kubeadm kubectl
+
+      - name: Initialize control plane
+        run: |
+          sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+
+      - name: Keep alive
+        run: |
+          # Keep the job running for demonstration
+          sleep 21600  # 6 hours
