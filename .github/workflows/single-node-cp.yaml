@@ -30,7 +30,6 @@ jobs:
           sudo mkdir -p /etc/containerd
           sudo containerd config default | sudo tee /etc/containerd/config.toml
           sudo sed -i 's/disabled_plugins = \["cri"\]/enabled_plugins = \["cri"\]/' /etc/containerd/config.toml
-          sudo sed -i 's/systemd_cgroup = false/systemd_cgroup = true/' /etc/containerd/config.toml
           sudo systemctl restart containerd
 
       - name: Install kubeadm, kubelet
@@ -41,6 +40,7 @@ jobs:
 
       - name: Initialize control plane
         run: |
+          sudo systemctl enable --now kubelet
           sudo kubeadm config images pull
           sudo kubeadm init --pod-network-cidr=10.244.0.0/16
 
