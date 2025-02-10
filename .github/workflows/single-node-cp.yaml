@@ -12,6 +12,7 @@ jobs:
         run: |
           KUBECTL_VERSION=$(kubectl version --client --output=json | jq -r '.clientVersion.gitVersion' | sed 's/^v//')
           echo "KUBECTL_VERSION=$KUBECTL_VERSION" >> $GITHUB_ENV
+          echo "KUBECTL_MINOR_VERSION=$(echo $KUBECTL_VERSION | cut -d. -f1,2)" >> $GITHUB_ENV
           echo "kubectl version: $KUBECTL_VERSION"
 
       - name: Add repository
@@ -19,8 +20,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y apt-transport-https ca-certificates curl gpg
           sudo mkdir -p -m 755 /etc/apt/keyrings
-          curl -fsSL https://pkgs.k8s.io/core:/stable:/v$(echo $KUBECTL_VERSION | cut -d. -f1,2)/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring-$KUBECTL_VERSION.gpg
-          echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring-$KUBECTL_VERSION.gpg] https://pkgs.k8s.io/core:/stable:/v$(echo $KUBECTL_VERSION | cut -d. -f1,2)/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+          curl -fsSL https://pkgs.k8s.io/core:/stable:/v$KUBECTL_MINOR_VERSION/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring-$KUBECTL_MINOR_VERSION.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring-$KUBECTL_MINOR_VERSION.gpg] https://pkgs.k8s.io/core:/stable:/v$KUBECTL_MINOR_VERSION/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
       - name: Install kubeadm, kubelet
         run: |
