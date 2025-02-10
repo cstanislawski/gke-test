@@ -11,7 +11,8 @@ jobs:
       - name: Install kubeadm, kubelet and kubectl
         run: |
           sudo apt-get update
-          sudo apt-get install -y kubelet kubeadm kubectl
+          # sudo apt-get install -y kubelet kubeadm kubectl
+          sudo apt-get install -y kubectl
           sudo apt-mark hold kubelet kubeadm kubectl
 
       - name: Initialize control plane
