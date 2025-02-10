@@ -1,0 +1,43 @@
+name: Create single node control plane
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-control-plane:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get kubectl version
+        run: |
+          echo "KUBECTL_VERSION=$(kubectl version --client --output=json | jq -r '.clientVersion.gitVersion' | sed 's/^v//')" >> $GITHUB_ENV
+          echo "KUBECTL_MINOR_VERSION=$(echo $KUBECTL_VERSION | cut -d. -f1,2)" >> $GITHUB_ENV
+          echo "kubectl version: $KUBECTL_VERSION"
+
+      - name: Initialize node
+        uses: ./.github/workflows/setup-node.yaml
+        with:
+          kubectl_version: $KUBECTL_VERSION
+
+      - name: Initialize control plane
+        run: |
+          sudo systemctl enable --now kubelet
+          sudo kubeadm config images pull
+          sudo kubeadm init --pod-network-cidr=10.244.0.0/16 > kubeadm-init.log 2>&1
+
+          mkdir -p $HOME/.kube
+          sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+          sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+          JOIN_COMMAND=$(sed -n '/kubeadm join/p' kubeadm-init.log)
+          echo "JOIN_COMMAND=$JOIN_COMMAND" >> $GITHUB_ENV
+          sed -i '/kubeadm join/d' kubeadm-init.log
+
+          cat kubeadm-init.log
+
+      - name: Install CNI plugin
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+
+      - name: Keep alive
+        run: |
+          sleep 21600  # 6 hours

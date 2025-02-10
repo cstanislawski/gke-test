@@ -1,27 +1,30 @@
-name: Create single node control plane
+name: Setup node template
 
 on:
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      kubectl_version:
+        required: true
+        type: string
+        description: "Kubectl version to install (e.g. 1.28.0)"
 
 jobs:
-  setup-control-plane:
+  setup-node-template:
     runs-on: ubuntu-latest
-
+    outputs:
+      kubectl_version: ${{ env.KUBECTL_VERSION }}
+      kubectl_minor_version: ${{ env.KUBECTL_MINOR_VERSION }}
     steps:
-      - name: Check kubectl version
+      - name: Set kubectl version
         run: |
-          KUBECTL_VERSION=$(kubectl version --client --output=json | jq -r '.clientVersion.gitVersion' | sed 's/^v//')
-          echo "KUBECTL_VERSION=$KUBECTL_VERSION" >> $GITHUB_ENV
-          echo "KUBECTL_MINOR_VERSION=$(echo $KUBECTL_VERSION | cut -d. -f1,2)" >> $GITHUB_ENV
-          echo "kubectl version: $KUBECTL_VERSION"
+          echo "KUBECTL_VERSION=${{ inputs.kubectl_version }}" >> $GITHUB_ENV
+          echo "KUBECTL_MINOR_VERSION=$(echo ${{ inputs.kubectl_version }} | cut -d. -f1,2)" >> $GITHUB_ENV
+          echo "kubectl version: ${{ inputs.kubectl_version }}"
 
       - name: System prerequisites
         run: |
-          # Disable swap
           sudo swapoff -a
           sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
-
-          # Enable required cgroups
           sudo mkdir -p /etc/modules-load.d
           echo overlay | sudo tee /etc/modules-load.d/k8s.conf
           echo br_netfilter | sudo tee -a /etc/modules-load.d/k8s.conf
@@ -30,7 +33,6 @@ jobs:
 
       - name: Configure system settings
         run: |
-          # sysctl params required by setup
           sudo tee /etc/sysctl.d/kubernetes.conf<<EOF
           net.bridge.bridge-nf-call-ip6tables = 1
           net.bridge.bridge-nf-call-iptables = 1
@@ -60,31 +62,3 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y kubelet=$KUBECTL_VERSION-1.1 kubeadm=$KUBECTL_VERSION-1.1
           sudo apt-mark hold kubelet kubeadm
-
-      - name: Initialize control plane
-        run: |
-          sudo systemctl enable --now kubelet
-          sudo kubeadm config images pull
-          # Capture the output of the kubeadm init command
-          sudo kubeadm init --pod-network-cidr=10.244.0.0/16 > kubeadm-init.log 2>&1
-
-          mkdir -p $HOME/.kube
-          sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-          sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
-          # Remove 'kubeadm join' from kubeadm-init.log
-          JOIN_COMMAND=$(sed -n '/kubeadm join/p' kubeadm-init.log)
-          echo "JOIN_COMMAND=$JOIN_COMMAND" >> $GITHUB_ENV
-          sed -i '/kubeadm join/d' kubeadm-init.log
-
-          # Print the output of the kubeadm init command
-          cat kubeadm-init.log
-
-      - name: Install CNI plugin
-        run: |
-          kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
-
-      - name: Keep alive
-        run: |
-          # Keep the job running for demonstration
-          sleep 21600  # 6 hours
