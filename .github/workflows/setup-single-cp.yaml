@@ -14,7 +14,7 @@ jobs:
           echo "kubectl version: $KUBECTL_VERSION"
 
       - name: Initialize node
-        uses: cstanislawski/gke-test/.github/workflows/setup-node.yaml
+        uses: cstanislawski/gke-test/.github/workflows/setup-node.yaml@main
         with:
           kubectl_version: $KUBECTL_VERSION
 
