@@ -4,20 +4,27 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup-control-plane:
+  get-kubectl-version:
     runs-on: ubuntu-latest
+    outputs:
+      kubectl_version: ${{ steps.get-version.outputs.kubectl_version }}
     steps:
-      - name: Get kubectl version
+      - id: get-version
         run: |
-          echo "KUBECTL_VERSION=$(kubectl version --client --output=json | jq -r '.clientVersion.gitVersion' | sed 's/^v//')" >> $GITHUB_ENV
-          echo "KUBECTL_MINOR_VERSION=$(echo $KUBECTL_VERSION | cut -d. -f1,2)" >> $GITHUB_ENV
+          KUBECTL_VERSION=$(kubectl version --client --output=json | jq -r '.clientVersion.gitVersion' | sed 's/^v//')
+          echo "kubectl_version=$KUBECTL_VERSION" >> $GITHUB_OUTPUT
           echo "kubectl version: $KUBECTL_VERSION"
 
-      - name: Initialize node
-        uses: cstanislawski/gke-test/.github/workflows/setup-node.yaml@main
-        with:
-          kubectl_version: $KUBECTL_VERSION
+  initialize-node:
+    needs: get-kubectl-version
+    uses: ./.github/workflows/setup-node.yaml
+    with:
+      kubectl_version: ${{ needs.get-kubectl-version.outputs.kubectl_version }}
 
+  setup-control-plane:
+    needs: initialize-node
+    runs-on: ubuntu-latest
+    steps:
       - name: Initialize control plane
         run: |
           sudo systemctl enable --now kubelet
