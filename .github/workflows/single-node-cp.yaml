@@ -65,7 +65,7 @@ jobs:
         run: |
           sudo systemctl enable --now kubelet
           sudo kubeadm config images pull
-          sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=Swap
+          sudo kubeadm init --pod-network-cidr=10.244.0.0/16
 
       - name: Keep alive
         run: |
