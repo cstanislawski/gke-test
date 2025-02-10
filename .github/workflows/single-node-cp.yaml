@@ -16,6 +16,7 @@ jobs:
 
       - name: Add repository
         run: |
+          echo "KUBECTL_VERSION=$KUBECTL_VERSION"
           sudo apt-get update
           sudo apt-get install -y apt-transport-https ca-certificates curl gpg
           sudo mkdir -p -m 755 /etc/apt/keyrings
