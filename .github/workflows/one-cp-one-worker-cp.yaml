@@ -2,6 +2,7 @@ name: One control plane, one worker - control plane
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   one-cp-one-worker-cp:
