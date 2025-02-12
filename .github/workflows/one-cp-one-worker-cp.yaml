@@ -89,7 +89,7 @@ jobs:
           kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
 
       - name: Call worker setup
-        uses: ./.github/workflows/one-cp-one-worker-worker.yaml@main
+        uses: ./.github/workflows/one-cp-one-worker-worker.yaml
         with:
           join_command: ${{ env.JOIN_COMMAND }}
 
