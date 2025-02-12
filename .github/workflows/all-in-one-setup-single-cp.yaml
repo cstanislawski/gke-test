@@ -1,0 +1,80 @@
+name: All-in-one setup for single node control plane
+
+on:
+  workflow_dispatch:
+
+jobs:
+  all-in-one-setup-single-cp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get kubectl version
+        run: |
+          KUBECTL_VERSION=$(kubectl version --client --output=json | jq -r '.clientVersion.gitVersion' | sed 's/^v//')
+          echo "kubectl_version=$KUBECTL_VERSION" >> $GITHUB_OUTPUT
+          echo "kubectl version: $KUBECTL_VERSION"
+
+      - name: System prerequisites
+        run: |
+          sudo swapoff -a
+          sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+          sudo mkdir -p /etc/modules-load.d
+          echo overlay | sudo tee /etc/modules-load.d/k8s.conf
+          echo br_netfilter | sudo tee -a /etc/modules-load.d/k8s.conf
+          sudo modprobe overlay
+          sudo modprobe br_netfilter
+
+      - name: Configure system settings
+        run: |
+          sudo tee /etc/sysctl.d/kubernetes.conf<<EOF
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.bridge.bridge-nf-call-iptables = 1
+          net.ipv4.ip_forward = 1
+          EOF
+          sudo sysctl --system
+
+      - name: Add repository
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+          sudo mkdir -p -m 755 /etc/apt/keyrings
+          curl -fsSL https://pkgs.k8s.io/core:/stable:/v$KUBECTL_MINOR_VERSION/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring-$KUBECTL_MINOR_VERSION.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring-$KUBECTL_MINOR_VERSION.gpg] https://pkgs.k8s.io/core:/stable:/v$KUBECTL_MINOR_VERSION/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+      - name: Install and configure containerd
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y containerd
+          sudo mkdir -p /etc/containerd
+          containerd config default | sudo tee /etc/containerd/config.toml
+          sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+          sudo systemctl restart containerd
+
+      - name: Install kubeadm, kubelet
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y kubelet=$KUBECTL_VERSION-1.1 kubeadm=$KUBECTL_VERSION-1.1
+          sudo apt-mark hold kubelet kubeadm
+
+      - name: Initialize control plane
+        run: |
+          sudo systemctl enable --now kubelet
+          sudo kubeadm config images pull
+          sudo kubeadm init --pod-network-cidr=10.244.0.0/16 > kubeadm-init.log 2>&1
+
+          mkdir -p $HOME/.kube
+          sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+          sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+          JOIN_COMMAND=$(sed -n '/kubeadm join/p' kubeadm-init.log)
+          echo "JOIN_COMMAND=$JOIN_COMMAND" >> $GITHUB_ENV
+          sed -i '/kubeadm join/d' kubeadm-init.log
+
+          cat kubeadm-init.log
+
+      - name: Install CNI plugin
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+
+      - name: Keep alive
+        run: |
+          sleep 300  # 5 minutes
