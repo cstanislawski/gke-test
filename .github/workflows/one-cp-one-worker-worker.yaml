@@ -10,7 +10,6 @@ on:
 jobs:
   one-cp-one-worker-worker:
     runs-on: ubuntu-latest
-
     steps:
       - name: Get kubectl version
         run: |
