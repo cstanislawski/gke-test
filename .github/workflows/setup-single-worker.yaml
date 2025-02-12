@@ -56,16 +56,9 @@ jobs:
           sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
           sudo systemctl restart containerd
 
-      - name: Download join command
-        uses: actions/download-artifact@v3
-        with:
-          name: join-command
-
       - name: Join cluster
-        run: |
-          echo "${{ inputs.join_command }}" > join-command.txt
-          sudo $(cat join-command.txt)
+        run: sudo ${{ inputs.join_command }}
 
-      - name: Verify node joined
+      - name: Keep alive
         run: |
           sleep 300 # 5 minutes

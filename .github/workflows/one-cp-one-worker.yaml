@@ -6,8 +6,6 @@ on:
 jobs:
   one-cp-one-worker:
     runs-on: ubuntu-latest
-    outputs:
-      join_command: ${{ env.JOIN_COMMAND }}
     steps:
       - name: Get kubectl version
         run: |
@@ -82,17 +80,6 @@ jobs:
 
           # Print the output of the kubeadm init command
           cat kubeadm-init.log
-
-      - name: Store join command
-        run: |
-          echo "$JOIN_COMMAND" > join-command.txt
-
-      - name: Upload join command
-        uses: actions/upload-artifact@v4.6.0
-        with:
-          name: join-command
-          path: join-command.txt
-          retention-days: 1
 
       - name: Install CNI plugin
         run: |
