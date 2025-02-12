@@ -88,7 +88,7 @@ jobs:
           echo "$JOIN_COMMAND" > join-command.txt
 
       - name: Upload join command
-        uses: actions/upload-artifact@v4.6
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: join-command
           path: join-command.txt
