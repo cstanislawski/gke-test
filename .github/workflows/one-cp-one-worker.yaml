@@ -1,0 +1,14 @@
+name: Setup One Control Plane, One Worker Cluster
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-control-plane:
+    uses: ./.github/workflows/setup-single-cp.yaml
+
+  setup-worker-node:
+    uses: ./.github/workflows/setup-single-worker.yaml
+    with:
+      join_command: ${{ needs.setup-control-plane.outputs.join_command }}
+

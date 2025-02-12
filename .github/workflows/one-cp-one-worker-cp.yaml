@@ -6,6 +6,8 @@ on:
 jobs:
   one-cp-one-worker-cp:
     runs-on: ubuntu-latest
+    outputs:
+      join_command: ${{ steps.initialize-control-plane.outputs.JOIN_COMMAND }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.0
@@ -78,7 +80,7 @@ jobs:
 
           # Remove 'kubeadm join' from kubeadm-init.log
           JOIN_COMMAND=$(sed -n '/kubeadm join/p' kubeadm-init.log)
-          echo "JOIN_COMMAND=$JOIN_COMMAND" >> $GITHUB_ENV
+          echo "JOIN_COMMAND=$JOIN_COMMAND" >> $GITHUB_OUTPUT
           sed -i '/kubeadm join/d' kubeadm-init.log
 
           # Print the output of the kubeadm init command
@@ -87,11 +89,6 @@ jobs:
       - name: Install CNI plugin
         run: |
           kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
-
-      - name: Call worker setup
-        uses: ./.github/workflows/one-cp-one-worker-worker.yaml
-        with:
-          join_command: ${{ env.JOIN_COMMAND }}
 
       - name: Keep alive and wait for worker
         run: |
