@@ -68,6 +68,11 @@ jobs:
           # Capture the output of the kubeadm init command
           sudo kubeadm init --pod-network-cidr=10.244.0.0/16 > kubeadm-init.log 2>&1
 
+          # Set up kubeconfig
+          mkdir -p $HOME/.kube
+          sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+          sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
           # Remove 'kubeadm join' from kubeadm-init.log
           JOIN_COMMAND=$(sed -n '/kubeadm join/p' kubeadm-init.log)
           echo "JOIN_COMMAND=$JOIN_COMMAND" >> $GITHUB_ENV
