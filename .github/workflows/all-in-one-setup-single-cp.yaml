@@ -10,7 +10,9 @@ jobs:
       - name: Get kubectl version
         run: |
           KUBECTL_VERSION=$(kubectl version --client --output=json | jq -r '.clientVersion.gitVersion' | sed 's/^v//')
+          KUBECTL_MINOR_VERSION=$(echo $KUBECTL_VERSION | cut -d. -f1,2)
           echo "kubectl_version=$KUBECTL_VERSION" >> $GITHUB_OUTPUT
+          echo "kubectl_minor_version=$KUBECTL_MINOR_VERSION" >> $GITHUB_OUTPUT
           echo "kubectl version: $KUBECTL_VERSION"
 
       - name: System prerequisites
