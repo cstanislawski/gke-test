@@ -1,26 +1,28 @@
-name: One control plane, one worker
+name: One control plane, one worker - worker
 
 on:
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      join_command:
+        required: true
+        type: string
 
 jobs:
-  one-cp-one-worker:
+  one-cp-one-worker-worker:
     runs-on: ubuntu-latest
+
     steps:
       - name: Get kubectl version
         run: |
           KUBECTL_VERSION=$(kubectl version --client --output=json | jq -r '.clientVersion.gitVersion' | sed 's/^v//')
           echo "KUBECTL_VERSION=$KUBECTL_VERSION" >> $GITHUB_ENV
           echo "KUBECTL_MINOR_VERSION=$(echo $KUBECTL_VERSION | cut -d. -f1,2)" >> $GITHUB_ENV
-          echo "kubectl version: $KUBECTL_VERSION"
 
       - name: System prerequisites
         run: |
-          # Disable swap
           sudo swapoff -a
           sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 
-          # Enable required cgroups
           sudo mkdir -p /etc/modules-load.d
           echo overlay | sudo tee /etc/modules-load.d/k8s.conf
           echo br_netfilter | sudo tee -a /etc/modules-load.d/k8s.conf
@@ -29,7 +31,6 @@ jobs:
 
       - name: Configure system settings
         run: |
-          # sysctl params required by setup
           sudo tee /etc/sysctl.d/kubernetes.conf<<EOF
           net.bridge.bridge-nf-call-ip6tables = 1
           net.bridge.bridge-nf-call-iptables = 1
@@ -54,47 +55,9 @@ jobs:
           sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
           sudo systemctl restart containerd
 
-      - name: Install kubeadm, kubelet
+      - name: Join cluster
+        run: sudo ${{ inputs.join_command }}
+
+      - name: Keep alive
         run: |
-          sudo apt-get update
-          sudo apt-get install -y kubelet=$KUBECTL_VERSION-1.1 kubeadm=$KUBECTL_VERSION-1.1
-          sudo apt-mark hold kubelet kubeadm
-
-      - name: Initialize control plane
-        run: |
-          sudo systemctl enable --now kubelet
-          sudo kubeadm config images pull
-
-          # Capture the output of the kubeadm init command
-          sudo kubeadm init --pod-network-cidr=10.244.0.0/16 > kubeadm-init.log 2>&1
-
-          # Set up kubeconfig
-          mkdir -p $HOME/.kube
-          sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-          sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
-          # Remove 'kubeadm join' from kubeadm-init.log
-          JOIN_COMMAND=$(sed -n '/kubeadm join/p' kubeadm-init.log)
-          echo "JOIN_COMMAND=$JOIN_COMMAND" >> $GITHUB_ENV
-          sed -i '/kubeadm join/d' kubeadm-init.log
-
-          # Print the output of the kubeadm init command
-          cat kubeadm-init.log
-
-      - name: Install CNI plugin
-        run: |
-          kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
-
-      - name: Call worker setup
-        uses: ./.github/workflows/setup-single-worker.yaml
-        with:
-          join_command: ${{ env.JOIN_COMMAND }}
-
-      - name: Keep alive and wait for worker
-        run: |
-          echo "Control plane is ready for worker node. Waiting for connection..."
-          for i in {1..6}; do # 5 minutes
-            kubectl get nodes
-            echo "Sleeping for 30 seconds..."
-            sleep 30
-          done
+          sleep 300 # 5 minutes
