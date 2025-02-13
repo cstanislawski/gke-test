@@ -17,4 +17,6 @@ runs:
           WORKFLOW_FILE: ${{ inputs.workflow_file }}
           COUNT: ${{ inputs.count }}
       run: |
-        gh workflow run "$WORKFLOW_FILE" -f "count=$COUNT" --ref "${{ github.ref }}"
+        gh workflow run "${{ inputs.workflow_file }}" \
+          --ref "${{ github.ref }}" \
+          -f "count=$(( ${{ inputs.count }} + 1 ))"

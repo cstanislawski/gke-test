@@ -1,4 +1,4 @@
-name: Infinite Loop B
+name: Infinite Loop A
 
 on:
   workflow_dispatch:
@@ -16,15 +16,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Display Count (B)
+      - name: Display Count (A)
         run: |
-          echo "Workflow B, Count: ${{ github.event.inputs.count }}"
+          echo "Workflow A, Count: ${{ github.event.inputs.count }}"
 
-      - name: Trigger Workflow A
+      - name: Trigger Workflow B
         uses: ./.github/actions/trigger-workflow
         with:
-          workflow_file: 'infinite_loop_a.yml'
+          workflow_file: 'infinite_loop_b.yaml'
           count: ${{ github.event.inputs.count + 1 }}
 
-      - name: Print Success (B)
-        run: echo "Success (B)"
+      - name: Print Success (A)
+        run: echo "Success (A)"
