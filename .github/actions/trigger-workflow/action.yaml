@@ -14,6 +14,7 @@ runs:
     - name: Trigger Workflow via repository_dispatch
       shell: bash
       env:
+          GH_TOKEN: ${{ github.token }}
           WORKFLOW_FILE: ${{ inputs.workflow_file }}
           COUNT: ${{ inputs.count }}
       run: |
