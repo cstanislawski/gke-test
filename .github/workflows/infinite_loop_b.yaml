@@ -24,7 +24,7 @@ jobs:
         uses: ./.github/actions/trigger-workflow
         with:
           workflow_file: 'infinite_loop_a.yaml'
-          count: ${{ github.event.inputs.count + 1 }}
+          count: ${{ github.event.inputs.count }}
 
       - name: Print Success (B)
         run: echo "Success (B)"
