@@ -1,0 +1,30 @@
+name: Infinite Loop A
+
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: 'The current count'
+        required: false
+        type: number
+        default: 0
+
+jobs:
+  trigger_and_continue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Display Count (A)
+        run: |
+          echo "Workflow A, Count: ${{ github.event.inputs.count }}"
+
+      - name: Trigger Workflow B
+        uses: ./.github/actions/trigger-workflow
+        with:
+          workflow_file: 'infinite_loop_b.yml'
+          count: ${{ github.event.inputs.count + 1 }}
+
+      - name: Print Success (A)
+        run: echo "Success (A)"

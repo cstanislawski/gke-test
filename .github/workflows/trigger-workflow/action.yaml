@@ -1,0 +1,20 @@
+name: 'Trigger Another Workflow (Built-in)'
+description: 'Triggers another workflow using repository_dispatch'
+inputs:
+  workflow_file:
+    description: 'The name of the workflow file to trigger (e.g., my_workflow.yml)'
+    required: true
+  count:
+    description: 'The count to pass'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Trigger Workflow via repository_dispatch
+      shell: bash
+      env:
+          WORKFLOW_FILE: ${{ inputs.workflow_file }}
+          COUNT: ${{ inputs.count }}
+      run: |
+        gh workflow run "$WORKFLOW_FILE" -f "count=$COUNT" --ref "${{ github.ref }}"
