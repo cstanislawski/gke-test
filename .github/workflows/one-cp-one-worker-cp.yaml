@@ -92,14 +92,12 @@ jobs:
           kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
 
       - name: Trigger worker node
-        uses: actions/github-script@v4.2.0
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          run: |
-            gh workflow run "one-cp-one-worker-worker.yaml" \
-              --ref "${{ github.ref }}" \
-              --inputs join_command="${{ env.JOIN_COMMAND }}"
+        run: |
+          gh workflow run "one-cp-one-worker-worker.yaml" \
+            --ref "${{ github.ref }}" \
+            --inputs join_command="${{ env.JOIN_COMMAND }}"
 
       - name: Keep alive and wait for worker
         run: |
