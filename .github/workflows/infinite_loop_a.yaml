@@ -1,8 +1,6 @@
 name: Infinite Loop A
 
 on:
-  repository_dispatch:
-    types: [trigger_a]
   workflow_dispatch:
     inputs:
       count:
@@ -15,32 +13,18 @@ jobs:
   trigger_and_continue:
     runs-on: ubuntu-latest
     steps:
-      - name: Get count
-        id: get_count
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "count=${{ github.event.inputs.count }}" >> $GITHUB_OUTPUT
-          else
-            echo "count=${{ github.event.client_payload.count }}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Increment count
-        id: increment
-        run: |
-          current_count=${{ steps.get_count.outputs.count }}
-          echo "new_count=$((current_count + 1))" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Display Count (A)
         run: |
-          echo "Workflow A, Count: ${{ steps.increment.outputs.new_count }}"
+          echo "Workflow A, Count: ${{ github.event.inputs.count }}"
 
       - name: Trigger Workflow B
-        run: |
-          curl -X POST \
-            -H "Authorization: token ${{ github.token }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            -d "{\"event_type\": \"trigger_b\", \"client_payload\": {\"count\": ${{ steps.increment.outputs.new_count }}}}" \
-            https://api.github.com/repos/${{ github.repository }}/dispatches
+        uses: ./.github/actions/trigger-workflow
+        with:
+          workflow_file: 'infinite_loop_b.yaml'
+          count: ${{ github.event.inputs.count }}
 
       - name: Print Success (A)
         run: echo "Success (A)"
