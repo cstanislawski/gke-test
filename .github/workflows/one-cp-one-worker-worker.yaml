@@ -1,11 +1,12 @@
 name: One control plane, one worker - worker
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       join_command:
         required: true
         type: string
+        description: 'The join command to join the worker node to the control plane'
 
 jobs:
   one-cp-one-worker-worker:
