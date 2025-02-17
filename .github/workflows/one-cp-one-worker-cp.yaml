@@ -93,6 +93,9 @@ jobs:
 
       - name: Trigger worker node
         uses: actions/github-script@v4.2.0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JOIN_COMMAND: ${{ env.JOIN_COMMAND }}
         with:
           script: |
             gh workflow run "one-cp-one-worker-worker.yaml" \
