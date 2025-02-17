@@ -24,7 +24,7 @@ jobs:
           echo "Workflow B, Count: ${{ github.event.inputs.count }}"
 
       - name: Sleep
-        run: sleep 60
+        run: sleep 300
 
       - name: Trigger Workflow A
         uses: ./.github/actions/trigger-workflow
