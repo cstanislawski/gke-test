@@ -27,7 +27,7 @@ jobs:
         run: sleep 300
 
       - name: Trigger Workflow A
-        uses: ./.github/actions/trigger-workflow
+        uses: ./.github/actions/trigger-infinite-workflow
         with:
           workflow_file: 'infinite_loop_a.yaml'
           count: ${{ github.event.inputs.count }}

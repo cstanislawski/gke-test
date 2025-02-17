@@ -1,4 +1,4 @@
-name: 'Trigger Another Workflow (Built-in)'
+name: 'Trigger Another Workflow Infinitely (Built-in)'
 description: 'Triggers another workflow using repository_dispatch'
 inputs:
   workflow_file:
