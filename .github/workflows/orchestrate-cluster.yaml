@@ -1,0 +1,14 @@
+name: Orchestrate Kubernetes Cluster
+
+on:
+  workflow_dispatch:
+
+jobs:
+  start-control-plane:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Control Plane Workflow
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: one-cp-one-worker-cp.yaml
+          token: ${{ secrets.GITHUB_TOKEN }}

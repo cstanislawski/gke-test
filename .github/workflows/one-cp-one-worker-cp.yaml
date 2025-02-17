@@ -87,6 +87,17 @@ jobs:
           # Print the output of the kubeadm init command
           cat kubeadm-init.log
 
+      - name: Save join command
+        run: |
+          echo "${{ steps.initialize-control-plane.outputs.JOIN_COMMAND }}" > join-command.txt
+
+      - name: Upload join command
+        uses: actions/upload-artifact@v4
+        with:
+          name: join-command
+          path: join-command.txt
+          retention-days: 1
+
       - name: Install CNI plugin
         run: |
           kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
