@@ -55,8 +55,20 @@ jobs:
           sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
           sudo systemctl restart containerd
 
+      - name: Install kubeadm, kubelet
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y kubelet=$KUBECTL_VERSION-1.1 kubeadm=$KUBECTL_VERSION-1.1
+          sudo apt-mark hold kubelet kubeadm
+
+      - name: Enable kubelet
+        run: sudo systemctl enable --now kubelet
+
       - name: Join cluster
-        run: sudo ${{ inputs.join_command }}
+        run: |
+          # Remove any trailing backslashes and join into single line
+          JOIN_CMD=$(echo "${{ inputs.join_command }}" | tr -d '\\' | tr '\n' ' ')
+          sudo $JOIN_CMD
 
       - name: Keep alive
         run: |
