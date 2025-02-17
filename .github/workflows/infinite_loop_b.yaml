@@ -9,6 +9,9 @@ on:
         type: number
         default: 0
 
+permissions:
+  actions: write
+
 jobs:
   trigger_and_continue:
     runs-on: ubuntu-latest
