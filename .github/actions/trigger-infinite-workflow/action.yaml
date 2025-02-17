@@ -1,5 +1,5 @@
 name: 'Trigger Another Workflow Infinitely (Built-in)'
-description: 'Triggers another workflow using repository_dispatch'
+description: 'Triggers another workflow using workflow_dispatch'
 inputs:
   workflow_file:
     description: 'The name of the workflow file to trigger (e.g., my_workflow.yml)'
@@ -11,7 +11,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Trigger Workflow via repository_dispatch
+    - name: Trigger Workflow via workflow_dispatch
       shell: bash
       env:
           GH_TOKEN: ${{ github.token }}
