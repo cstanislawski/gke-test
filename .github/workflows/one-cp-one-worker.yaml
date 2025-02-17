@@ -8,6 +8,7 @@ jobs:
     uses: ./.github/workflows/one-cp-one-worker-cp.yaml
 
   setup-worker-node:
+    needs: setup-control-plane  # This ensures the control plane job runs first
     uses: ./.github/workflows/one-cp-one-worker-worker.yaml
     with:
       join_command: ${{ needs.setup-control-plane.outputs.join_command }}
