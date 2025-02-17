@@ -19,13 +19,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-
-      - name: Sleep
-        run: sleep 60
-
       - name: Display Count (A)
         run: |
           echo "Workflow A, Count: ${{ github.event.inputs.count }}"
+
+      - name: Sleep
+        run: sleep 60
 
       - name: Trigger Workflow B
         uses: ./.github/actions/trigger-workflow
