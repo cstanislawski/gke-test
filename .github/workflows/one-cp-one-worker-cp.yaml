@@ -79,13 +79,16 @@ jobs:
           sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
           sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-          # Remove 'kubeadm join' from kubeadm-init.log
-          JOIN_COMMAND=$(sed -n '/kubeadm join/p' kubeadm-init.log)
-          echo "JOIN_COMMAND=$JOIN_COMMAND" >> $GITHUB_ENV
-          sed -i '/kubeadm join/d' kubeadm-init.log
+          # Extract and properly escape the join command
+          JOIN_COMMAND=$(grep -A 1 "kubeadm join" kubeadm-init.log | tr '\n' ' ' | sed 's/\\$//')
+          # Escape the join command for GitHub Actions
+          ESCAPED_JOIN_COMMAND=$(echo "$JOIN_COMMAND" | sed 's/"/\\"/g')
+          echo "JOIN_COMMAND<<EOF" >> $GITHUB_ENV
+          echo "$ESCAPED_JOIN_COMMAND" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
-          # Print the output of the kubeadm init command
-          cat kubeadm-init.log
+          # Print the init output without the join command
+          sed '/kubeadm join/,+1d' kubeadm-init.log
 
       - name: Install CNI plugin
         run: |
@@ -97,7 +100,7 @@ jobs:
         run: |
           gh workflow run "one-cp-one-worker-worker.yaml" \
             --ref "${{ github.ref }}" \
-            --inputs join_command="${{ env.JOIN_COMMAND }}"
+            --raw-field join_command="${JOIN_COMMAND}"
 
       - name: Keep alive and wait for worker
         run: |
