@@ -90,6 +90,15 @@ jobs:
           # Print the init output without the join command
           sed '/kubeadm join/,+1d' kubeadm-init.log
 
+      - name: Validate API server
+        run: |
+          echo "Checking API server status"
+          sudo netstat -tulpn | grep 6443
+          curl -k https://localhost:6443/healthz
+          sudo iptables -L | grep 6443
+          # Print public IP for debugging
+          curl -s ifconfig.me
+
       - name: Install CNI plugin
         run: |
           kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml

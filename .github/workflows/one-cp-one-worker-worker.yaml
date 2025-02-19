@@ -64,12 +64,28 @@ jobs:
       - name: Enable kubelet
         run: sudo systemctl enable --now kubelet
 
+      - name: Network validation
+        run: |
+          # Add before Join cluster step
+          CONTROL_PLANE_IP=$(echo "${{ inputs.join_command }}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
+          echo "Testing connectivity to $CONTROL_PLANE_IP:6443"
+          nc -zv $CONTROL_PLANE_IP 6443
+          curl -k https://$CONTROL_PLANE_IP:6443/healthz
+          sudo iptables -L
+
       - name: Join cluster
         run: |
           # Remove any trailing backslashes and join into single line
           JOIN_CMD=$(echo "${{ inputs.join_command }}" | tr -d '\\' | tr '\n' ' ')
           echo "Executing command: $JOIN_CMD --skip-phases=preflight --ignore-preflight-errors=all --v=5"
-          sudo $JOIN_CMD --skip-phases=preflight --ignore-preflight-errors=all --v=5
+          # Add timeout for debugging
+          timeout 300 sudo $JOIN_CMD --skip-phases=preflight --ignore-preflight-errors=all --v=5 || true
+
+          # Add post-join diagnostics
+          echo "### Post-join diagnostics ###"
+          sudo systemctl status kubelet
+          sudo journalctl -xeu kubelet
+          sudo crictl ps
 
       - name: Keep alive
         run: |
