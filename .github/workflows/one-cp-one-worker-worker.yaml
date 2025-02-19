@@ -68,8 +68,8 @@ jobs:
         run: |
           # Remove any trailing backslashes and join into single line
           JOIN_CMD=$(echo "${{ inputs.join_command }}" | tr -d '\\' | tr '\n' ' ')
-          echo "Executing command: $JOIN_CMD --skip-phases=preflight --ignore-preflight-errors=all"
-          sudo $JOIN_CMD --skip-phases=preflight --ignore-preflight-errors=all
+          echo "Executing command: $JOIN_CMD --skip-phases=preflight --ignore-preflight-errors=all --v=5"
+          sudo $JOIN_CMD --skip-phases=preflight --ignore-preflight-errors=all --v=5
 
       - name: Keep alive
         run: |
