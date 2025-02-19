@@ -71,30 +71,23 @@ jobs:
           sudo systemctl enable --now kubelet
           sudo kubeadm config images pull
 
-          # Get public IP
-          PUBLIC_IP=$(curl -s ifconfig.me)
-          echo "Using public IP: $PUBLIC_IP"
+          # Capture the output of the kubeadm init command
+          sudo kubeadm init --pod-network-cidr=10.244.0.0/16 > kubeadm-init.log 2>&1
 
-          # Initialize with advertise address
-          sudo kubeadm init \
-            --pod-network-cidr=10.244.0.0/16 \
-            --apiserver-advertise-address=$PUBLIC_IP \
-            --control-plane-endpoint=$PUBLIC_IP \
-            > kubeadm-init.log 2>&1
-
-          # Rest of the initialization remains the same
+          # Set up kubeconfig
           mkdir -p $HOME/.kube
           sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
           sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
+          # Extract and properly escape the join command
           JOIN_COMMAND=$(grep -A 1 "kubeadm join" kubeadm-init.log | tr '\n' ' ' | sed 's/\\$//')
-          # Replace private IP with public IP in join command
-          JOIN_COMMAND=$(echo "$JOIN_COMMAND" | sed "s/[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+:6443/$PUBLIC_IP:6443/")
-
+          # Escape the join command for GitHub Actions
+          ESCAPED_JOIN_COMMAND=$(echo "$JOIN_COMMAND" | sed 's/"/\\"/g')
           echo "JOIN_COMMAND<<EOF" >> $GITHUB_ENV
-          echo "$JOIN_COMMAND" >> $GITHUB_ENV
+          echo "$ESCAPED_JOIN_COMMAND" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
+          # Print the init output without the join command
           sed '/kubeadm join/,+1d' kubeadm-init.log
 
       - name: Configure network for API server
@@ -136,20 +129,6 @@ jobs:
           ip route show
           sudo iptables -L -v -n
           sudo iptables -t nat -L -v -n
-
-      - name: Configure API server
-        run: |
-          sudo mkdir -p /etc/kubernetes/manifests/
-          sudo sed -i 's/--bind-address=127.0.0.1/--bind-address=0.0.0.0/' /etc/kubernetes/manifests/kube-apiserver.yaml
-
-          # Restart to apply changes
-          sudo systemctl restart kubelet
-
-          # Wait for API server to be ready
-          echo "Waiting for API server..."
-          until kubectl get nodes; do
-            sleep 5
-          done
 
       - name: Validate API server
         run: |
