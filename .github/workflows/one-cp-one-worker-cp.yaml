@@ -92,38 +92,24 @@ jobs:
 
       - name: Configure network for API server
         run: |
-          # Create iptables directory
-          sudo mkdir -p /etc/iptables
-
-          # Basic network configuration
-          sudo iptables -P INPUT ACCEPT
-          sudo iptables -P FORWARD ACCEPT
-          sudo iptables -P OUTPUT ACCEPT
-
-          # Clear existing rules
-          sudo iptables -F
-
-          # API Server access
+          echo "Configuring network rules..."
           sudo iptables -A INPUT -p tcp --dport 6443 -j ACCEPT
           sudo iptables -A OUTPUT -p tcp --sport 6443 -j ACCEPT
+          sudo iptables -A FORWARD -p tcp --dport 6443 -j ACCEPT
 
-          # Kubelet access
+          # Allow kubelet ports
           sudo iptables -A INPUT -p tcp --dport 10250 -j ACCEPT
           sudo iptables -A INPUT -p tcp --dport 30000:32767 -j ACCEPT
 
-          # Flannel networking
+          # Allow flannel
           sudo iptables -A INPUT -p udp --dport 8472 -j ACCEPT
           sudo iptables -A FORWARD -i flannel.1 -j ACCEPT
           sudo iptables -A FORWARD -o flannel.1 -j ACCEPT
 
-          # Enable masquerading
-          sudo iptables -t nat -A POSTROUTING -s 10.244.0.0/16 -j MASQUERADE
-
           # Save rules
-          sudo mkdir -p /etc/iptables
           sudo iptables-save | sudo tee /etc/iptables/rules.v4
 
-          # Verify configuration
+          # Debug output
           echo "Network configuration:"
           ip addr show
           ip route show
