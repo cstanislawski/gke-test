@@ -106,7 +106,8 @@ jobs:
         run: |
           echo "Control plane is ready for worker node. Waiting for connection..."
           for i in {1..6}; do # 5 minutes
-            kubectl get nodes
+            kubectl get nodes -o wide
+            kubectl get pods -A
             echo "Sleeping for 30 seconds..."
             sleep 30
           done
